@@ -71,7 +71,7 @@ void CAgentCorpseManager::react_on_member_death()
 
 	m_corpses.erase
 	(
-		std::remove_if(m_corpses.begin(), m_corpses.end(), [](CMemberCorpse &corpse) { return !!corpse.reactor();}, m_corpses.end()
+		std::remove_if(m_corpses.begin(), m_corpses.end(), [](CMemberCorpse &corpse) { return !!corpse.reactor();}), m_corpses.end()
 	);
 }
 

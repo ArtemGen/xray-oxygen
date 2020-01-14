@@ -41,7 +41,7 @@ void CAgentManagerPlanner::add_actions		()
 {
 	CAgentManagerActionBase	*action;
 
-	action					= new CAgentManagerTemplate(&object(), "no_orders", EAgentMngrType::eNoOrders);
+	action					= new CAgentManagerPropertyTemplate(&object(), "no_orders", EAgentMngrType::eNoOrders);
 	add_condition			(action,ePropertyOrders,			false);
 	add_condition			(action,ePropertyItem,				false);
 	add_condition			(action,ePropertyDanger,			false);
@@ -49,19 +49,19 @@ void CAgentManagerPlanner::add_actions		()
 	add_effect				(action,ePropertyOrders,			true);
 	add_operator			(eOperatorNoOrders,					action);
 
-	action					= new CAgentManagerTemplate(&object(),"gather_items", EAgentMngrType::eGatherItems);
+	action					= new CAgentManagerPropertyTemplate(&object(),"gather_items", EAgentMngrType::eGatherItems);
 	add_condition			(action,ePropertyItem,				true);
 	add_condition			(action,ePropertyEnemy,				false);
 	add_condition			(action,ePropertyDanger,			false);
 	add_effect				(action,ePropertyItem,				false);
 	add_operator			(eOperatorGatherItem,				action);
 
-	action					= new CAgentManagerTemplate(&object(),"kill_enemy", EAgentMngrType::eKillEnemy);
+	action					= new CAgentManagerPropertyTemplate(&object(),"kill_enemy", EAgentMngrType::eKillEnemy);
 	add_condition			(action,ePropertyEnemy,				true);
 	add_effect				(action,ePropertyEnemy,				false);
 	add_operator			(eOperatorKillEnemy,				action);
 
-	action					= new CAgentManagerTemplate(&object(),"react_on_danger", EAgentMngrType::eReactOnDanger);
+	action					= new CAgentManagerPropertyTemplate(&object(),"react_on_danger", EAgentMngrType::eReactOnDanger);
 	add_condition			(action,ePropertyEnemy,				false);
 	add_condition			(action,ePropertyDanger,			true);
 	add_effect				(action,ePropertyDanger,			false);

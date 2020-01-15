@@ -31,10 +31,10 @@ void CAgentManagerPlanner::setup	(CAgentManager *object)
 
 void CAgentManagerPlanner::add_evaluators	()
 {
-	add_evaluator			(ePropertyOrders,xr_new<CAgentManagerPropertyEvaluatorConst>(false,"property_order"));
-	add_evaluator			(ePropertyItem	,xr_new<CAgentManagerPropertyEvaluatorItem>(&object(),"property_item"));
-	add_evaluator			(ePropertyEnemy	,xr_new<CAgentManagerPropertyEvaluatorEnemy>(&object(),"property_enemy"));
-	add_evaluator			(ePropertyDanger,xr_new<CAgentManagerPropertyEvaluatorDanger>(&object(),"property_danger"));
+	add_evaluator(ePropertyOrders, new CAgentManagerPropertyEvaluatorConst(false,"property_order"));
+	add_evaluator(ePropertyItem, new CAgentManagerPropertyTemplate(&object(), "property_item", EAgentEvaluatorMngr::eItem));
+	add_evaluator(ePropertyEnemy, new CAgentManagerPropertyTemplate(&object(),"property_enemy", EAgentEvaluatorMngr::eEnemy));
+	add_evaluator(ePropertyDanger, new CAgentManagerPropertyTemplate(&object(),"property_danger", EAgentEvaluatorMngr::eDanger));
 }
 
 void CAgentManagerPlanner::add_actions		()

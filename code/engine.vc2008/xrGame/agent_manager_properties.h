@@ -5,55 +5,33 @@
 //	Author		: Dmitriy Iassenev
 //	Description : Agent manager properties
 ////////////////////////////////////////////////////////////////////////////
-
 #pragma once
-
 #include "property_evaluator_const.h"
 #include "property_evaluator_member.h"
 
 class CAgentManager;
+using CAgentManagerPropertyEvaluator		= CPropertyEvaluator<CAgentManager>;
+using CAgentManagerPropertyEvaluatorConst 	= CPropertyEvaluatorConst<CAgentManager>;
+using CAgentManagerPropertyEvaluatorMember 	= CPropertyEvaluatorMember<CAgentManager>;
 
-typedef CPropertyEvaluator<CAgentManager>		CAgentManagerPropertyEvaluator;
-typedef CPropertyEvaluatorConst<CAgentManager>	CAgentManagerPropertyEvaluatorConst;
-typedef CPropertyEvaluatorMember<CAgentManager>	CAgentManagerPropertyEvaluatorMember;
+enum EAgentEvaluatorMngr : u8
+{
+	eItem = 0,
+	eEnemy,
+	eDanger, 
 
-//////////////////////////////////////////////////////////////////////////
-// CAgentManagerPropertyEvaluatorItem
-//////////////////////////////////////////////////////////////////////////
-
-class CAgentManagerPropertyEvaluatorItem : public CAgentManagerPropertyEvaluator {
-protected:
-	typedef CAgentManagerPropertyEvaluator inherited;
-
-public:
-	IC					CAgentManagerPropertyEvaluatorItem	(CAgentManager *object = 0, LPCSTR evaluator_name = "");
-	virtual _value_type	evaluate						();
-};
-
-//////////////////////////////////////////////////////////////////////////
-// CAgentManagerPropertyEvaluatorEnemy
-//////////////////////////////////////////////////////////////////////////
-
-class CAgentManagerPropertyEvaluatorEnemy : public CAgentManagerPropertyEvaluator {
-protected:
-	typedef CAgentManagerPropertyEvaluator inherited;
-
-public:
-	IC					CAgentManagerPropertyEvaluatorEnemy	(CAgentManager *object = 0, LPCSTR evaluator_name = "");
-	virtual _value_type	evaluate						();
+	eBroken = u8(-1)
 };
 
 class CAgentManagerPropertyTemplate : public CAgentManagerPropertyEvaluator 
 {
-public:
+protected:
 	using inherited = CAgentManagerPropertyEvaluator;
 	
-protected:
+public:
 	EAgentEvaluatorMngr ManagerType;
 
 public:
-	IC					CAgentManagerPropertyEvaluatorDanger	(CAgentManager *object = 0, LPCSTR evaluator_name = "");
-	virtual _value_type	evaluate								();
+	CAgentManagerPropertyTemplate(CAgentManager* pObj = nullptr, const char* name = "", EAgentEvaluatorMngr eType = EAgentEvaluatorMngr::eBroken);
+	virtual _value_type	evaluate();
 };
-
-#include "agent_manager_properties_inline.h"

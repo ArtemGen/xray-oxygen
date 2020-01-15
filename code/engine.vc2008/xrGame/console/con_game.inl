@@ -468,12 +468,12 @@ struct CCC_StartTimeSingle : public IConsole_Command {
 	CCC_StartTimeSingle(LPCSTR N) : IConsole_Command(N) {};
 	virtual void	Execute	(LPCSTR args)
 	{
-		u32 year = 1, month = 1, day = 1, hours = 0, mins = 0, secs = 0, milisecs = 0;
-		sscanf				(args,"%d.%d.%d %d:%d:%d.%d",&year,&month,&day,&hours,&mins,&secs,&milisecs);
+		u32 year = 1, month = 1, day = 1, hours = 0, mins = 0, secs = 0;
+		sscanf				(args,"%d.%d.%d %d:%d:%d",&year,&month,&day,&hours,&mins,&secs);
 		year				= std::max(year,(u32)1);
 		month				= std::max(month,(u32)1);
 		day					= std::max(day,(u32)1);
-		g_qwStartGameTime	= generate_time	(year,month,day,hours,mins,secs,milisecs);
+		g_qwStartGameTime	= generate_time	(year,month,day,hours,mins,secs);
 
 		if (!g_pGameLevel)
 			return;

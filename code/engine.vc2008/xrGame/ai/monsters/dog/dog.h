@@ -36,7 +36,6 @@ public:
 			void			set_custom_anim_state(bool b_state_animation);
 			u32				get_number_animation();
 			u32				random_anim();
-			bool			is_night();
 
 			bool			b_end_state_eat;
 			bool			b_state_check;

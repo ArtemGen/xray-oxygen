@@ -200,15 +200,6 @@ void CAI_Dog::UpdateCL()
 	}
 }
 
-bool CAI_Dog::is_night()
-{
-	u32 hours = return_time(GetGameTime(), ETimeType::eHOURS);
-	if (hours <= 6 || hours >=21 )
-		return true;
-
-	return false;
-}
-
 void CAI_Dog::CheckSpecParams(u32 spec_params)
 {
 	if ((spec_params & ASP_CHECK_CORPSE) == ASP_CHECK_CORPSE)
@@ -230,7 +221,7 @@ u32 CAI_Dog::random_anim()
 {
 	if (m_anim_factor > u32(Random.randI(100)))
 	{
-		if (is_night()) return 5;
+		if (Environment().IsNight()) return 5;
 		return 4;
 	}
 	return Random.randI(4);

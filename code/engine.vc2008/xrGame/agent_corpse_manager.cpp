@@ -80,7 +80,7 @@ void CAgentCorpseManager::remove_links	(CObject *object)
 	m_corpses.erase(std::remove_if
 	(
 		m_corpses.begin(), m_corpses.end(), 
-		[object](CMemberCorpse &corpse){return corpse.corpse()->ID() == object->ID();},
+		[object](CMemberCorpse &corpse){return corpse.corpse()->ID() == object->ID();}),
 		m_corpses.end()
 	));
 }

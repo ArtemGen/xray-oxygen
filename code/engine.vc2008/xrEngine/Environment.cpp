@@ -440,10 +440,23 @@ void CEnvironment::Lerp(float& current_weight)
 	CurrentEnv->Lerp		(this, *Current[0], *Current[1], current_weight, EM, mpower);
 }
 
+bool CEnvironment::IsNight()
+{
+	if(!g_pGameLevel) 
+		return;
+	
+	u32 CurrentHours = return_time(g_pGameLevel->GetGameTime(), ETimeType::eHOURS);
+	if (CurrentHours <= 6 || CurrentHours >=21 )
+		return true;
+
+	return false;
+}
+
 void CEnvironment::OnFrame()
 {
 	if (!g_pGameLevel)
 		return;
+	
 	float current_weight;
 	Lerp(current_weight);
 

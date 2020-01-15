@@ -48,6 +48,8 @@ private:
 
 public:
 	float					NormalizeTime	(float tm);
+	bool					IsNight() const;
+	
 private:
 	float					TimeDiff		(float prev, float cur);
 	float					TimeWeight		(float val, float min_t, float max_t);

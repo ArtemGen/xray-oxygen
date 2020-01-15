@@ -259,7 +259,7 @@ bool CWeaponMagazined::IsAmmoAvailable()
 // Если магазин пустой
 void CWeaponMagazined::OnMagazineEmpty()
 {
-	if (GetState() == eMagEmpty)
+	if (GetState() == eIdle)
 	{
 		OnEmptyClick();
 		return;
@@ -1072,22 +1072,8 @@ void CWeaponMagazined::InitAddons()
 					
 					m_zoom_params.m_bUseDynamicZoom = READ_IF_EXISTS(pSettings, r_bool, GetScopeName().c_str(), "scope_dynamic_zoom", false);
 
-					try
-					{
-						m_zoom_params.m_sUseZoomPostprocess = READ_IF_EXISTS(pSettings, r_string, GetScopeName().c_str(), "scope_nightvision", nullptr);
-					}
-					catch (...)
-					{
-						m_zoom_params.m_sUseZoomPostprocess = nullptr;
-					}
-					try
-					{
-						m_zoom_params.m_sUseBinocularVision = READ_IF_EXISTS(pSettings, r_string, GetScopeName().c_str(), "scope_alive_detector", nullptr);
-					}
-					catch (...)
-					{
-						m_zoom_params.m_sUseBinocularVision = nullptr;
-					}
+					m_zoom_params.m_sUseZoomPostprocess = READ_IF_EXISTS(pSettings, r_string, GetScopeName().c_str(), "scope_nightvision", nullptr);
+					m_zoom_params.m_sUseBinocularVision = READ_IF_EXISTS(pSettings, r_string, GetScopeName().c_str(), "scope_alive_detector", nullptr);
 
 					xr_delete(m_UIScope);
 
@@ -1250,6 +1236,9 @@ void CWeaponMagazined::OnZoomIn()
 
 void CWeaponMagazined::OnZoomOut()
 {
+	if (!IsZoomed())	 
+		return;
+
 	inherited::OnZoomOut();
 	PlayAnimIdle();
 
@@ -1273,7 +1262,10 @@ bool CWeaponMagazined::SwitchMode()
 	if (eIdle != GetState() || IsPending()) 
 		return false;
 
-	m_iQueueSize = SingleShotMode() ? WEAPON_ININITE_QUEUE : 1;
+	if (SingleShotMode())
+		m_iQueueSize = WEAPON_ININITE_QUEUE;
+	else
+		m_iQueueSize = 1;
 
 	PlaySound("sndEmptyClick", get_LastFP());
 
@@ -1306,7 +1298,7 @@ void CWeaponMagazined::OnH_A_Chield()
 		if (smart_cast<CActor*>(H_Parent()))
 			SetQueueSize(GetCurrentFireMode()); 
 		else // НПС всегда переключает на автоматический режим, если он есть, или на максимальную очередь.
-			SetQueueSize(smart_cast<CWeaponShotgun*>(this) ? 1 : WEAPON_ININITE_QUEUE);
+			SetQueueSize(smart_cast<CWeaponBM16*>(this) ? 1 : WEAPON_ININITE_QUEUE);
 	};
 
 	inherited::OnH_A_Chield();

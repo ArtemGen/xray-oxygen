@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: agent_corpse_manager.cpp
 //	Created 	: 24.05.2004
-//  Modified 	: 04.01.2020
+//  Modified 	: 14.01.2005
 //	Author		: Dmitriy Iassenev
 //	Description : Agent corpse manager
 ////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,27 @@
 #include "visual_memory_manager.h"
 #include "agent_manager.h"
 #include "agent_member_manager.h"
+
+struct CRemoveMemberCorpsesPredicate {
+	IC	bool operator()				(CMemberCorpse &corpse) const
+	{
+		return		(!!corpse.reactor());
+	}
+};
+
+struct CRemoveOfflineCorpsesPredicate {
+	CObject		*m_object;
+	IC		 CRemoveOfflineCorpsesPredicate	(CObject *object)
+	{
+		VERIFY		(object);
+		m_object	= object;
+	}
+
+	IC	bool operator()						(CMemberCorpse &corpse) const
+	{
+		return		(corpse.corpse()->ID() == m_object->ID());
+	}
+};
 
 bool CAgentCorpseManager::process_corpse	(CMemberOrder &member)
 {
@@ -85,6 +106,6 @@ void CAgentCorpseManager::remove_links	(CObject *object)
 	));
 }
 
-void CAgentCorpseManager::update()
+void CAgentCorpseManager::update		()
 {
 }

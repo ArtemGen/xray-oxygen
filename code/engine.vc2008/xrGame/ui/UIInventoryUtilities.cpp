@@ -264,9 +264,9 @@ const shared_str InventoryUtilities::GetTimeAsString(ALife::_TIME_ID time, ETime
 
     memset(bufTime, 0, sizeof(bufTime));
 
-	u32 hours = return_time(time, ETimeType::eHOURS);
-	u32 mins = return_time(time, ETimeType::eMINUTES);
-	u32 secs = return_time(time, ETimeType::eSECONDS);
+	u32 year = 0, month = 0, day = 0, hours = 0, mins = 0, secs = 0, milisecs = 0;
+
+	split_time(time, year, month, day, hours, mins, secs, milisecs);
 
 	// Time
 	switch (timePrec)
@@ -292,6 +292,8 @@ const shared_str InventoryUtilities::GetTimeAsString(ALife::_TIME_ID time, ETime
 		}
 		xr_sprintf(bufTime, "0%c%02i", timeSeparator, secs);
 		break;
+	case etpTimeToMilisecs:
+		xr_sprintf(bufTime, "%02i%c%02i%c%02i%c%02i", hours, timeSeparator, mins, timeSeparator, secs, timeSeparator, milisecs);
 		break;
 	case etpTimeToSecondsAndDay:
 		{
@@ -312,10 +314,9 @@ const shared_str InventoryUtilities::GetDateAsString(ALife::_TIME_ID date, EDate
 
     std::memset(bufDate, 0, sizeof(bufDate));
 
-	u32 year = return_time(date, ETimeType::eYEARS);
-	u32 month = return_time(date, ETimeType::eMONTHS);
-	u32 day = return_time(date, ETimeType::eDAYS);
+	u32 year = 0, month = 0, day = 0, hours = 0, mins = 0, secs = 0, milisecs = 0;
 
+	split_time(date, year, month, day, hours, mins, secs, milisecs);
 	VERIFY( 1 <= month && month <= 12 );
 	LPCSTR month_str = CStringTable().translate( st_months[month-1] ).c_str();
 
@@ -344,10 +345,9 @@ const shared_str InventoryUtilities::GetNumDateAsString(ALife::_TIME_ID date, ED
 
     std::memset(bufDate, 0, sizeof(bufDate));
 
-	u32 year = return_time(date, ETimeType::eYEARS);
-	u32 month = return_time(date, ETimeType::eMONTHS);
-	u32 day = return_time(date, ETimeType::eDAYS);
-	
+	u32 year = 0, month = 0, day = 0, hours = 0, mins = 0, secs = 0, milisecs = 0;
+
+	split_time(date, year, month, day, hours, mins, secs, milisecs);
 	VERIFY( 1 <= month && month <= 12 );
 	LPCSTR month_str = CStringTable().translate( st_num_months[month-1] ).c_str();
 
@@ -372,17 +372,11 @@ const shared_str InventoryUtilities::GetNumDateAsString(ALife::_TIME_ID date, ED
 
 LPCSTR InventoryUtilities::GetTimePeriodAsString(LPSTR _buff, u32 buff_sz, ALife::_TIME_ID _from, ALife::_TIME_ID _to)
 {
-	u32 month1 = return_time(_from, ETimeType::eMONTHS);
-	u32 day1 = return_time(_from, ETimeType::eDAYS);
-	u32 hours1 = return_time(_from, ETimeType::eHOURS);
-	u32 mins1 = return_time(_from, ETimeType::eMINUTES);
-	u32 secs1 = return_time(_from, ETimeType::eSECONDS);
+	u32 year1,month1,day1,hours1,mins1,secs1,milisecs1;
+	u32 year2,month2,day2,hours2,mins2,secs2,milisecs2;
 	
-	u32 month2 = return_time(_to, ETimeType::eMONTHS);
-	u32 day2 = return_time(_to, ETimeType::eDAYS);
-	u32 hours2 = return_time(_to, ETimeType::eHOURS);
-	u32 mins2 = return_time(_to, ETimeType::eMINUTES);
-	u32 secs2 = return_time(_to, ETimeType::eSECONDS);
+	split_time(_from, year1, month1, day1, hours1, mins1, secs1, milisecs1);
+	split_time(_to, year2, month2, day2, hours2, mins2, secs2, milisecs2);
 	
 	int cnt		= 0;
 	_buff[0]	= 0;

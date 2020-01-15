@@ -30,12 +30,12 @@ void CAgentManagerActionTemplate::finalize()
 		m_object->corpse().clear();
 }
 
-void CAgentManagerActionTemplate::initialize		()
+void CAgentManagerActionTemplate::initialize()
 {
 	inherited::initialize();
 	
 	if(eActionType == EAgentMngrType::eKillEnemy || eActionType == EAgentMngrType::eReactOnDanger)
-	m_object->location().clear();
+		m_object->location().clear();
 }
 
 void CAgentManagerActionTemplate::execute()

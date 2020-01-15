@@ -29,4 +29,8 @@ public:
 
 public:
 	CAgentManagerActionTemplate(CAgentManager *object, LPCSTR action_name = "", EAgentMngrType eType = EAgentMngrType::eNoOrders);
+	
+	void initialize();
+	void execute();
+	void finalize();
 };

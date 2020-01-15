@@ -103,7 +103,7 @@ void CAgentCorpseManager::remove_links	(CObject *object)
 		m_corpses.begin(), m_corpses.end(), 
 		[object](CMemberCorpse &corpse){return corpse.corpse()->ID() == object->ID();}),
 		m_corpses.end()
-	));
+	);
 }
 
 void CAgentCorpseManager::update		()

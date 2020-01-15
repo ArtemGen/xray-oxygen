@@ -25,10 +25,8 @@ enum EAgentEvaluatorMngr : u8
 
 class CAgentManagerPropertyTemplate : public CAgentManagerPropertyEvaluator 
 {
-protected:
-	using inherited = CAgentManagerPropertyEvaluator;
-	
 public:
+	using inherited = CAgentManagerPropertyEvaluator;
 	EAgentEvaluatorMngr ManagerType;
 
 public:

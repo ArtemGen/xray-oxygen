@@ -627,7 +627,7 @@ ALife::_TIME_ID CLevel::GetEnvironmentGameTime()
 
 u8 CLevel::GetDayTime()
 {
-	u32 hours = return_time(GetGameTime(), TIMETYPE_HOURS);
+	u32 hours = return_time(GetGameTime(), ETimeType::eHOURS);
 	return u8(hours);
 }
 

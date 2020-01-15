@@ -443,7 +443,7 @@ void CEnvironment::Lerp(float& current_weight)
 bool CEnvironment::IsNight() const
 {
 	if(!g_pGameLevel) 
-		return;
+		return false;
 	
 	u32 CurrentHours = return_time(g_pGameLevel->GetGameTime(), ETimeType::eHOURS);
 	if (CurrentHours <= 6 || CurrentHours >=21 )

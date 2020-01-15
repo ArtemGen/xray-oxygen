@@ -440,7 +440,7 @@ void CEnvironment::Lerp(float& current_weight)
 	CurrentEnv->Lerp		(this, *Current[0], *Current[1], current_weight, EM, mpower);
 }
 
-bool CEnvironment::IsNight()
+bool CEnvironment::IsNight() const
 {
 	if(!g_pGameLevel) 
 		return;

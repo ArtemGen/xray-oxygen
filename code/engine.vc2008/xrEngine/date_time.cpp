@@ -79,7 +79,7 @@ ENGINE_API void GameTime::split_time(u64 time, u32 &years, u32 &months, u32 &day
 	days = u32(time);
 }
 
-u32 return_time(u64 time, ETimeType timeType)
+ENGINE_API u32 GameTime::return_time(u64 time, ETimeType timeType)
 {
 	u32 seconds, minutes, hours, day, months, years;
 	split_time(time, years, months, day, hours, minutes, seconds);

@@ -20,18 +20,18 @@
 #include "IGame_Level.h"
 #include "GameFont.h"
 
-#include "../xrcore/xrCore.h"
-
 #include "../Include/xrRender/LensFlareRender.h"
 #include "../Include/xrRender/RainRender.h"
 #include "../Include/xrRender/ThunderboltRender.h"
+
+#include "date_time.h"
 
 ENGINE_API CEnvironment* pEnvironment = nullptr;
 
 ENGINE_API CEnvironment& Environment()
 {
 	if (!pEnvironment)
-		pEnvironment = xr_new<CEnvironment>();
+		pEnvironment = new CEnvironment();
 
 	return *pEnvironment;
 }
@@ -45,7 +45,7 @@ ENGINE_API	float		psFogDensity	= 1.0f;
 ENGINE_API	float		psFogNear		= 1.0f;
 ENGINE_API	float		psFogFar		= 1.0f;
 ENGINE_API  Fvector3	psFogColor		= { 0.1f, 0.1f, 0.1f };
-static const float		MAX_NOISE_FREQ	= 0.03f;
+static constexpr float	MAX_NOISE_FREQ	= 0.03f;
 
 // real WEATHER->WFX transition time
 #define WFX_TRANS_TIME 5.0f

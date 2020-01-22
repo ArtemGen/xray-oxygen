@@ -5,6 +5,7 @@
 #include "particle_manager.h"
 #include "particle_effect.h"
 #include "particle_actions_collection.h"
+#include "ParticlesObject.h"
 
 using namespace PAPI;
 
@@ -15,94 +16,67 @@ PARTICLES_API IParticleManager* PAPI::ParticleManager() { return &PM; }
 //
 CParticleManager::CParticleManager()
 {
+	Device.seqFrame.Add(this, REG_PRIORITY_HIGH + 10500);
 }
 
 CParticleManager::~CParticleManager()
 {
+	Device.seqFrame.Remove(this);
 }
 
-ParticleEffect*	CParticleManager::GetEffectPtr(int effect_id)
+CParticleManager::SharedParticleEffect CParticleManager::GetEffectPtr(int effect_id)
 {
-	R_ASSERT(effect_id >= 0 && effect_id < (int)effect_vec.size());
-	return effect_vec[effect_id];
+	return m_effect_map[effect_id];
 }
 
-ParticleActions* CParticleManager::GetActionListPtr(int a_list_num)
+CParticleManager::SharedParticleActions CParticleManager::GetActionListPtr(int a_list_num)
 {
-	R_ASSERT(a_list_num >= 0 && a_list_num < (int)m_alist_vec.size());
-	return m_alist_vec[a_list_num];
+	return m_alist_map[a_list_num];
 }
 
 // create
 int CParticleManager::CreateEffect(u32 max_particles)
 {
-	int eff_id = -1;
-	for (auto i = 0; i < effect_vec.size(); ++i)
-	{
-		if (!effect_vec[i])
-		{
-			eff_id = i;
-			break;
-		}
-	}
+	int effectId = m_effect_counter++;
 
-	if (eff_id < 0)
-	{
-		// Couldn't find a big enough gap. Reallocate.
-		eff_id = (int)effect_vec.size();
-		effect_vec.push_back(0);
-	}
+	auto EffectResultPair = m_effect_map.emplace(std::make_pair(effectId, SharedParticleEffect(new ParticleEffect(max_particles))));
+	R_ASSERT2(EffectResultPair.second, "Can't create particle effect with global counter");
 
-	effect_vec[eff_id] = new ParticleEffect(max_particles);
-
-	return eff_id;
+	return effectId;
 }
 void CParticleManager::DestroyEffect(int effect_id)
 {
-	R_ASSERT(effect_id >= 0 && effect_id < (int)effect_vec.size());
-	xr_delete(effect_vec[effect_id]);
+	xrCriticalSectionGuard guard(m_effect_destroyer_guard);
+	m_effect_map.unsafe_erase(effect_id);
 }
+
 int	CParticleManager::CreateActionList()
 {
-	int list_id = -1;
-	for (u32 i = 0; i < m_alist_vec.size(); ++i)
-	{
-		if (!m_alist_vec[i])
-		{
-			list_id = i;
-			break;
-		}
-	}
-	if (list_id < 0)
-	{
-		// Couldn't find a big enough gap. Reallocate.
-		list_id = (int)m_alist_vec.size();
-		m_alist_vec.push_back(0);
-	}
+	int actionId = m_action_counter++;
 
-	m_alist_vec[list_id] = new ParticleActions();
+	auto ActionResultPair = m_alist_map.emplace(std::make_pair(actionId, SharedParticleActions(new ParticleActions())));
+	R_ASSERT2(ActionResultPair.second, "Can't create particle action with global counter");
 
-	return list_id;
+	return actionId;
 }
+
 void CParticleManager::DestroyActionList(int alist_id)
 {
-	R_ASSERT(alist_id >= 0 && alist_id < (int)m_alist_vec.size());
-	xr_delete(m_alist_vec[alist_id]);
+	xrCriticalSectionGuard guard(m_action_destroyer_guard);
+	m_alist_map.unsafe_erase(alist_id);
 }
 
 // control
 void CParticleManager::PlayEffect(int effect_id, int alist_id)
 {
 	// Execute the specified action list.
-	ParticleActions* pa = GetActionListPtr(alist_id);
-	VERIFY(pa);
+	SharedParticleActions particleAction = GetActionListPtr(alist_id);
 
-	if (pa == nullptr)
+	if (!particleAction)
 		return; // ERROR
 
-	pa->lock();
 	// Step through all the actions in the action list.
-	for (PAVecIt it = pa->begin(); it != pa->end(); ++it)
+	for (PAVecIt it = particleAction->begin(); it != particleAction->end(); ++it)
 	{
 		VERIFY((*it));
 		switch ((*it)->type)
@@ -118,22 +92,18 @@ void CParticleManager::PlayEffect(int effect_id, int alist_id)
 			break;
 		}
 	}
-	pa->unlock();
 }
 
 void CParticleManager::StopEffect(int effect_id, int alist_id, BOOL deffered)
 {
 	// Execute the specified action list.
-	ParticleActions* pa = GetActionListPtr(alist_id);
-	VERIFY(pa);
+	SharedParticleActions particleAction = GetActionListPtr(alist_id);
 
-	if (pa == nullptr)
+	if (!particleAction)
 		return; // ERROR
 
-	pa->lock();
-
 	// Step through all the actions in the action list.
-	for (PAVecIt it = pa->begin(); it != pa->end(); ++it)
+	for (PAVecIt it = particleAction->begin(); it != particleAction->end(); ++it)
 	{
 		switch ((*it)->type)
 		{
@@ -146,53 +116,47 @@ void CParticleManager::StopEffect(int effect_id, int alist_id, BOOL deffered)
 	if (!deffered)
 	{
 		// effect
-		ParticleEffect* pe = GetEffectPtr(effect_id);
-		pe->p_count = 0;
+		SharedParticleEffect particleEffect = GetEffectPtr(effect_id);
+		if (!particleEffect)
+		{
+			return;
+		}
+		particleEffect->p_count = 0;
 	}
-
-	pa->unlock();
 }
 
 // update&render
 void CParticleManager::Update(int effect_id, int alist_id, float dt)
 {
-	ParticleEffect* pe = GetEffectPtr(effect_id);
-	ParticleActions* pa = GetActionListPtr(alist_id);
+	SharedParticleEffect pe = GetEffectPtr(effect_id);
+	SharedParticleActions pa = GetActionListPtr(alist_id);
 
-	VERIFY(pa);
-	VERIFY(pe);
-
-	pa->lock();
-
-	// Step through all the actions in the action list.
-	float kill_old_time = 1.0f;
-	for (PAPI::ParticleAction* pAction : *pa)
+	if (!pe || !pa)
 	{
-		try
+		return;
+	}
+
+	{
+		xrCriticalSectionGuard guard(m_update_guard);
+		// Step through all the actions in the action list.
+		float kill_old_time = 1.0f;
+		for (PAPI::ParticleAction* pAction : *pa)
 		{
-			pAction->Execute(pe, dt, kill_old_time);
-		}
-		catch(...)
-		{
-			Log("[Warning] Current Particle action is invalid!");
+			pAction->Execute(&(*pe), dt, kill_old_time);
 		}
 	}
-	pa->unlock();
 }
-void CParticleManager::Render(int effect_id)
-{
-	//    ParticleEffect* pe	= GetEffectPtr(effect_id);
-}
+
+
 void CParticleManager::Transform(int alist_id, const Fmatrix& full, const Fvector& vel)
 {
 	// Execute the specified action list.
-	ParticleActions* pa = GetActionListPtr(alist_id);
-	VERIFY(pa);
+	SharedParticleActions pa = GetActionListPtr(alist_id);
 
-	if (pa == NULL)
+	if (!pa)
+	{
 		return; // ERROR
-
-	pa->lock();
+	}
 
 	Fmatrix mT;
 	mT.translate(full.c);
@@ -210,37 +174,60 @@ void CParticleManager::Transform(int alist_id, const Fmatrix& full, const Fvecto
 			break;
 		}
 	}
-	pa->unlock();
 }
 
 // effect
 void CParticleManager::RemoveParticle(int effect_id, u32 p_id)
 {
-	ParticleEffect *pe = GetEffectPtr(effect_id);
+	SharedParticleEffect pe = GetEffectPtr(effect_id);
+	if (!pe)
+	{
+		return;
+	}
 	pe->Remove(p_id);
 }
+
 void CParticleManager::SetMaxParticles(int effect_id, u32 max_particles)
 {
-	ParticleEffect *pe = GetEffectPtr(effect_id);
+	SharedParticleEffect pe = GetEffectPtr(effect_id);
+	if (!pe)
+	{
+		return;
+	}
 	pe->Resize(max_particles);
 }
+
 void CParticleManager::SetCallback(int effect_id, OnBirthParticleCB b, OnDeadParticleCB d, void* owner, u32 param)
 {
-	ParticleEffect *pe = GetEffectPtr(effect_id);
+	SharedParticleEffect pe = GetEffectPtr(effect_id);
+	if (!pe)
+	{
+		return;
+	}
 	pe->b_cb = b;
 	pe->d_cb = d;
 	pe->owner = owner;
 	pe->param = param;
 }
+
 void CParticleManager::GetParticles(int effect_id, Particle*& particles, u32& cnt)
 {
-	ParticleEffect *pe = GetEffectPtr(effect_id);
+	SharedParticleEffect pe = GetEffectPtr(effect_id);
+	if (!pe)
+	{
+		return;
+	}
 	particles = pe->particles;
 	cnt = pe->p_count;
 }
+
 u32	CParticleManager::GetParticlesCount(int effect_id)
 {
-	ParticleEffect *pe = GetEffectPtr(effect_id);
+	SharedParticleEffect pe = GetEffectPtr(effect_id);
+	if (!pe)
+	{
+		return 0;
+	}
 	return 			pe->p_count;
 }
 
@@ -347,11 +334,15 @@ ParticleAction* CParticleManager::CreateAction(PActionEnum type)
 	pa->type = type;
 	return pa;
 }
+
 u32 CParticleManager::LoadActions(int alist_id, IReader& R)
 {
 	// Execute the specified action list.
-	ParticleActions* pa = GetActionListPtr(alist_id);
-	VERIFY(pa);
+	SharedParticleActions pa = GetActionListPtr(alist_id);
+	if (!pa)
+	{
+		return 0;
+	}
 	pa->clear();
 	if (R.length())
 	{
@@ -360,28 +351,30 @@ u32 CParticleManager::LoadActions(int alist_id, IReader& R)
 		{
 			ParticleAction* act = CreateAction((PActionEnum)R.r_u32());
 			act->Load(R);
-			try
-			{
-				pa->append(act);
-			}
-			catch (...)
-			{
-			//	Msg("[ERROR] Error particle append!");
-			}
+			pa->append(act);
 		}
 	}
 	return pa->size();
 }
+
 void CParticleManager::SaveActions(int alist_id, IWriter& W)
 {
 	// Execute the specified action list.
-	ParticleActions* pa = GetActionListPtr(alist_id);
-	VERIFY(pa);
-	pa->lock();
+	SharedParticleActions pa = GetActionListPtr(alist_id);
+	if (!pa)
+	{
+		return;
+	}
 	W.w_u32(pa->size());
 
 	for (PAVecIt it = pa->begin(); it != pa->end(); ++it)
 		(*it)->Save(W);
+}
 
-	pa->unlock();
+void CParticleManager::OnFrame(void)
+{
+	if (!Device.Paused())
+	{
+		CParticlesObject::UpdateAllAsync();
+	}
 }

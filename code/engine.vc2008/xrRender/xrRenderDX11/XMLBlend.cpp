@@ -11,12 +11,12 @@
 
 CXMLBlend::CXMLBlend(const char* FileName)
 {
-	string256 NewName;
+	string256 FixedName;
 	for (int i = 0, l = xr_strlen(FileName) + 1; i < l; ++i)
-		NewName[i] = ('\\' == FileName[i]) ? '_' : FileName[i];
+		FixedName[i] = ('\\' == FileName[i]) ? '_' : FileName[i];
 
-	xr_strconcat(NewName, NewName, ".xml");
-	File = NewName;
+	xr_strconcat(FixedName, FixedName, ".xml");
+	memcpy(File, FixedName, sizeof(FixedName));
 
 	pCompiler = new CBlender_Compile();
 	Parser.Load("$game_shaders$", "r3", File);
@@ -24,12 +24,17 @@ CXMLBlend::CXMLBlend(const char* FileName)
 	pCompiler->detail_scaler = nullptr;
 }
 
+CXMLBlend::~CXMLBlend()
+{
+	xr_delete(pCompiler);
+}
+
 Shader* CXMLBlend::Compile(const char* Texture)
 {
-	bool bUseDetail = true;
 	XML_NODE* pRoot = Parser.GetRoot();
 	for (u32 Iter = 0; Iter < 16; Iter++)
 	{
+		bool bUseDetail = true;
 		string16 buff;
 		xr_sprintf(buff, sizeof(buff), "element_%d", Iter);
 		XML_NODE* pElement = Parser.NavigateToNode(pRoot, buff);
@@ -65,14 +70,11 @@ Shader* CXMLBlend::Compile(const char* Texture)
 
 ShaderElement* CXMLBlend::MakeShader(const char* Texture, XML_NODE* pElement)
 {
-	ShaderElement E;
-	pCompiler->SH = &E;
+	pCompiler->SH = new ShaderElement();
 	pCompiler->RS.Invalidate();
 
 	// Compile
 	LPCSTR t_0 = *pCompiler->L_textures[0] ? *pCompiler->L_textures[0] : "null";
-	//LPCSTR t_1 = (pCompiler->L_textures.size() > 1) ? *pCompiler->L_textures[1] : "null";
-	//LPCSTR t_d = pCompiler->detail_texture ? pCompiler->detail_texture : "null";
 
 	// Parse root attributes
 	bool bFog = Parser.ReadAttribBool(pElement, "fog", true);
@@ -201,7 +203,8 @@ ShaderElement* CXMLBlend::MakeShader(const char* Texture, XML_NODE* pElement)
 	}
 
 	pCompiler->r_End();
-	ShaderElement* pTryElement = dxRenderDeviceRender::Instance().Resources->_CreateElement(E);
+	ShaderElement* pTryElement = dxRenderDeviceRender::Instance().Resources->_CreateElement(*pCompiler->SH);
+	xr_delete(pCompiler->SH);
 	return pTryElement;
 }
 

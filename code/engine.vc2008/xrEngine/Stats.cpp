@@ -73,6 +73,7 @@ void CStats::Show()
 		Engine_RenderFrame.FrameEnd();
 		Engine_ApplicationFrame.FrameEnd();
 		Engine_InputFrame.FrameEnd();
+		Engine_LevelFrame.FrameEnd();
 		Engine_MenuFrame.FrameEnd();
 		Engine_PersistanceFrame.FrameEnd();
 		Engine_PersistanceFrame_Begin.FrameEnd();
@@ -215,6 +216,7 @@ void CStats::Show()
 		F.OutNext	(" -> Render      : %2.2fms, %2.1f%%", Engine_RenderFrame.result,				GetPercentOf(Engine_RenderFrame.result, EngineTOTAL));
 		F.OutNext	(" -> Application : %2.2fms, %2.1f%%", Engine_ApplicationFrame.result,			GetPercentOf(Engine_ApplicationFrame.result, EngineTOTAL));
 		F.OutNext	(" -> Input       : %2.2fms, %2.1f%%", Engine_InputFrame.result,				GetPercentOf(Engine_InputFrame.result, EngineTOTAL));
+		F.OutNext	(" -> Level       : %2.2fms, %2.1f%%", Engine_LevelFrame.result,				GetPercentOf(Engine_LevelFrame.result, EngineTOTAL));
 		F.OutNext	(" -> Menu        : %2.2fms, %2.1f%%", Engine_MenuFrame.result,					GetPercentOf(Engine_MenuFrame.result, EngineTOTAL));
 		F.OutNext	(" -> Persistence : %2.2fms, %2.1f%%", Engine_PersistanceFrame.result,			GetPercentOf(Engine_PersistanceFrame.result, EngineTOTAL));
 		F.OutNext	(" -> -> Begin                : %2.2fms, %2.1f%%", Engine_PersistanceFrame_Begin.result,		   GetPercentOf(Engine_PersistanceFrame_Begin.result, Engine_PersistanceFrame));
@@ -322,9 +324,28 @@ void CStats::Show()
 		m_pRender->OutData4(F);
 		//////////////////////////////////////////////////////////////////////////
 		// Renderer specific
-		F.SetHeightI						(f_base_size);
-		F.OutSet						(200,0);
-		Render->Statistics				(&F);
+		//F.SetHeightI						(f_base_size);
+		//F.OutSet						(200,0);
+		//Render->Statistics				(&F);
+
+		//////////////////////////////////////////////////////////////////////////
+		// Game general
+		if (Profiling.IsInitialized() && Profiling.IsInEngineMode())
+		{
+			F.SetHeightI(f_base_size);
+			F.OutSet(200, 0);
+
+			const xr_map<LPCSTR, xrProfiling::StartAndEnd>& ProfilingData = Profiling.GetProfilerResults();
+
+			for (auto& profilerPortion : ProfilingData)
+			{
+				const xrProfiling::StartAndEnd& Data = profilerPortion.second;
+				u64 delta = Data.End - Data.Start;
+
+				float fTime = 1000.f * float(double(delta) / double(CPU::qpc_freq));
+				F.OutNext("Task \"%s\": %2.2fms", profilerPortion.first, fTime);
+			}
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Game specific
@@ -381,12 +402,7 @@ void CStats::Show()
 	{
         if ((Core.dwFrame % 25) == 0)
         {
-			if (CNvReader::bSupport)
-				NVGPULoad = NvData.GetPercentActive();
-
-			if (CAMDReader::bAMDSupportADL)
-				AMDGPULoad = AMDData.GetPercentActive();
-
+			GPULoad = Device.m_pRender->GetGPULoadPercent();
 		    // init all variables
 		    MEMORYSTATUSEX mem;
 		    PROCESS_MEMORY_COUNTERS_EX pmc;
@@ -411,8 +427,6 @@ void CStats::Show()
 
 		    // Counting CPU load
             CPU::Info.getCPULoad(cpuLoad);
-            cpuBefore = cpuLoad;
-
 			CPU::Info.MTCPULoad();
         }
 
@@ -446,15 +460,10 @@ void CStats::Show()
 			dwScale += 15;
 		}
 
-		if (CAMDReader::bAMDSupportADL)
+		if (GPULoad != 0)
 		{
 			pFont->SetColor(DebugTextColor::DTC_BLUE);
-			pFont->Out(10, dwScale, "GPU Used: %d", AMDGPULoad);
-		}
-		else if(CNvReader::bSupport)
-		{
-			pFont->SetColor(DebugTextColor::DTC_BLUE);
-			pFont->Out(10, dwScale, "GPU Used: %d", NVGPULoad);
+			pFont->Out(10, dwScale, "GPU Used: %d", GPULoad);
 		}
         pFont->OnRender();
 	}
@@ -488,6 +497,7 @@ void CStats::Show()
 		Engine_RenderFrame.FrameStart();
 		Engine_ApplicationFrame.FrameStart();
 		Engine_InputFrame.FrameStart();
+		Engine_LevelFrame.FrameStart();
 		Engine_MenuFrame.FrameStart();
 		Engine_PersistanceFrame.FrameStart();
 		Engine_PersistanceFrame_Begin.FrameStart();
@@ -619,7 +629,7 @@ void CStats::OnRender				()
 				if (g_stats_flags.is(st_sound_max_dist))
 					DU->DrawSphere		(Fidentity, item.params.position, item.params.max_distance, 0x4000FF00,	0xFF008000, true, true);
 				
-				xr_string out_txt		= (out_txt.size() && g_stats_flags.is(st_sound_info_name)) ? item.name.c_str():"";
+				xr_string out_txt		= (!out_txt.empty() && g_stats_flags.is(st_sound_info_name)) ? item.name.c_str():"";
 
 				if (item.game_object)
 				{

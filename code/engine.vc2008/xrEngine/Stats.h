@@ -37,6 +37,7 @@ public:
 	CStatTimer  Engine_RenderFrame;		 // void CRender::OnFrame()
 	CStatTimer  Engine_ApplicationFrame; // void CApplication::OnFrame()
 	CStatTimer  Engine_InputFrame;		 // void CInput::OnFrame()
+	CStatTimer  Engine_LevelFrame;		 // void CLevel::OnFrame()
 	CStatTimer  Engine_MenuFrame;		 // void CMainMenu::OnFrame()
 	CStatTimer  Engine_PersistanceFrame; // void CGamePersistent::OnFrame()
 	CStatTimer  Engine_PersistanceFrame_Begin; // void CGamePersistent::OnFrame() - Beginning
@@ -114,15 +115,13 @@ public:
 	CStatTimer	TEST2;				// debug counter
 	CStatTimer	TEST3;				// debug counter
 
-	u32 AMDGPULoad;
-	u32 NVGPULoad;
+	u32 GPULoad;
 	float AvailableMem;
 	float AvailablePageFileMem;
 	float PageFileMemUsedByApp;
 	float PhysMemoryUsedPercent;
 
-	double cpuBefore;
-	double cpuLoad = cpuBefore;
+	double cpuLoad;
 #ifdef DEBUG
 	LPVOID MinAppAddress;
     LPVOID MaxAppAddress;
